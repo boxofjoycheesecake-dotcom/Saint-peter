@@ -1,0 +1,7 @@
+{
+  "name": "St. Peter Digital Briefcase",
+  "description": "A comprehensive digital operating system for St. Peter Life Plan agents, featuring a CRM workflow, knowledge base, and AI-powered marketing copilot.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

@@ -1,0 +1,98 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: leads
+// Document ID: {leadId}
+// Fields:
+//   - name: string (required) - Full name of the lead.
+//   - contact: string (required) - Phone number or social media handle.
+//   - status: string (required, enum: ["Lead Capture", "Nurture", "Pitch", "Objection Handling", "Closed Won", "Closed Lost"]) - Current stage in the sales workflow.
+//   - notes: string (optional) - Additional details or conversation history.
+//   - assignedAgentId: string (required) - UID of the agent managing this lead.
+//   - createdAt: timestamp (required) - When the lead was first recorded.
+//   - updatedAt: timestamp (required) - When the lead was last updated.
+//
+// Collection: plans
+// Document ID: {planId}
+// Fields:
+//   - name: string (required) - Name of the plan.
+//   - type: string (required, enum: ["Traditional", "Cremation"]) - Type of service.
+//   - price: number (required) - Total contract price.
+//   - monthlyInstallment: number (required) - Monthly payment for 5 years.
+//   - benefits: list (required) - List of inclusions and benefits.
+//   - description: string (optional) - Brief marketing description.
+//
+// Collection: marketing_templates
+// Document ID: {templateId}
+// Fields:
+//   - title: string (required) - Title of the template.
+//   - category: string (required, enum: ["Peace of Mind", "Family Love", "Financial Planning"]) - Marketing angle.
+//   - visualUrl: string (required) - URL to the visual asset.
+//   - defaultCaption: string (required) - Standard caption in Taglish.
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isLeadOwner(leadData) {
+      return isAuthenticated() && request.auth.uid == leadData.assignedAgentId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidLead(data) {
+      return hasRequiredFields(['name', 'contact', 'status', 'assignedAgentId', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.contact is string && data.contact.size() > 0 && data.contact.size() < 100 &&
+             data.status in ["Lead Capture", "Nurture", "Pitch", "Objection Handling", "Closed Won", "Closed Lost"] &&
+             data.assignedAgentId == request.auth.uid &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Leads: Only the assigned agent can read/write their leads
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && resource.data.assignedAgentId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidLead(request.resource.data);
+      allow update: if isAuthenticated() && isLeadOwner(resource.data) && isValidLead(request.resource.data);
+      allow delete: if isAuthenticated() && isLeadOwner(resource.data);
+    }
+
+    // Plans: Publicly readable (authenticated), but only admins can write (manual setup for now)
+    match /plans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Read-only for now
+    }
+
+    // Marketing Templates: Publicly readable (authenticated)
+    match /marketing_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Read-only for now
+    }
+  }
+}

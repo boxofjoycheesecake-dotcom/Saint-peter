@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "A potential customer for St. Peter Life Plans.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the lead." },
+        "contact": { "type": "string", "description": "Phone number or social media handle." },
+        "status": { "type": "string", "enum": ["Lead Capture", "Nurture", "Pitch", "Objection Handling", "Closed Won", "Closed Lost"], "description": "Current stage in the sales workflow." },
+        "notes": { "type": "string", "description": "Additional details or conversation history." },
+        "assignedAgentId": { "type": "string", "description": "UID of the agent managing this lead." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the lead was first recorded." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the lead was last updated." }
+      },
+      "required": ["name", "contact", "status", "assignedAgentId", "createdAt", "updatedAt"]
+    },
+    "Plan": {
+      "title": "St. Peter Life Plan",
+      "description": "Details of a specific life plan offered by St. Peter.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the plan (e.g., St. Anne, St. Bernadette)." },
+        "type": { "type": "string", "enum": ["Traditional", "Cremation"], "description": "Type of service." },
+        "price": { "type": "number", "description": "Total contract price." },
+        "monthlyInstallment": { "type": "number", "description": "Monthly payment for 5 years." },
+        "benefits": { "type": "array", "items": { "type": "string" }, "description": "List of inclusions and benefits." },
+        "description": { "type": "string", "description": "Brief marketing description." }
+      },
+      "required": ["name", "type", "price", "monthlyInstallment", "benefits"]
+    },
+    "MarketingTemplate": {
+      "title": "Marketing Template",
+      "description": "Pre-approved visual and text templates for marketing.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the template." },
+        "category": { "type": "string", "enum": ["Peace of Mind", "Family Love", "Financial Planning"], "description": "Marketing angle." },
+        "visualUrl": { "type": "string", "description": "URL to the visual asset." },
+        "defaultCaption": { "type": "string", "description": "Standard caption in Taglish." }
+      },
+      "required": ["title", "category", "visualUrl", "defaultCaption"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Collection of leads managed by agents."
+    },
+    "/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Reference collection for St. Peter plans."
+    },
+    "/marketing_templates/{templateId}": {
+      "schema": "MarketingTemplate",
+      "description": "Reference collection for marketing assets."
+    }
+  }
+}
