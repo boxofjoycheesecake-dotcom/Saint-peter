@@ -176,6 +176,8 @@ export default function App() {
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const loginInProgress = React.useRef(false);
 
   // AI State
   const [aiLoading, setAiLoading] = useState(false);
@@ -212,8 +214,12 @@ export default function App() {
   }, [user]);
 
   const handleLogin = async () => {
+    if (loginInProgress.current) return;
+    loginInProgress.current = true;
+    setIsLoggingIn(true);
     setLoginError(null);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
@@ -227,6 +233,9 @@ export default function App() {
       } else {
         setLoginError("An unexpected error occurred during login. Please try again.");
       }
+    } finally {
+      setIsLoggingIn(false);
+      loginInProgress.current = false;
     }
   };
 
@@ -353,9 +362,13 @@ export default function App() {
               </div>
             )}
 
-            <Button onClick={handleLogin} className="w-full py-4 text-lg">
-              <User className="w-5 h-5" />
-              Agent Login with Google
+            <Button onClick={handleLogin} disabled={isLoggingIn} className="w-full py-4 text-lg">
+              {isLoggingIn ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <User className="w-5 h-5" />
+              )}
+              {isLoggingIn ? 'Connecting...' : 'Agent Login with Google'}
             </Button>
           </div>
           <p className="mt-8 text-emerald-700/60 text-sm">
